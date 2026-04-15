@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel Mastery Exam System</title>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-dark: #1e429f;
+    --success: #057a55;
+    --danger: #c81e1e;
+    --warning: #b45309;
+    --bg: #f9fafb;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ===== ADMIN PANEL ===== */
+  #admin-screen { background: #f0f4ff; }
+  .admin-header { background: var(--primary); color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+  .admin-header h1 { font-size: 1.2rem; font-weight: 600; }
+  .admin-body { padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; }
+  .stat-card .num { font-size: 2rem; font-weight: 700; color: var(--primary); }
+  .stat-card .lbl { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+  .admin-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+  .admin-section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .candidate-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .candidate-table th { background: #f3f4f6; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; }
+  .candidate-table td { padding: 0.6rem 0.8rem; border-top: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
+  .badge-active { background: #d1fae5; color: #065f46; }
+  .badge-warn { background: #fef3c7; color: #92400e; }
+  .badge-danger { background: #fee2e2; color: #991b1b; }
+  .badge-done { background: #dbeafe; color: #1e40af; }
+  .badge-disq { background: #f3f4f6; color: #374151; }
+  .alert-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
+  .alert-box .alert-msg { font-size: 0.85rem; }
+  .alert-box .alert-time { font-size: 0.75rem; color: var(--muted); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1.1rem; border: none; border-radius: 7px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.87; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .disq-btn { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-size: 0.75rem; padding: 3px 8px; border-radius: 5px; cursor: pointer; }
+  .disq-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .admin-link-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; }
+  .admin-link-box input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.7rem; font-size: 0.85rem; background: #fff; }
+  #admin-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f4ff; }
+  #admin-login .login-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 2.5rem 2rem; width: 360px; }
+  #admin-login h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary); }
+  #admin-login p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 4px; color: var(--muted); }
+  .form-group input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: 7px; font-size: 0.9rem; outline: none; }
+  .form-group input:focus { border-color: var(--primary); }
+
+  /* ===== STUDENT PORTAL ===== */
+  #student-screen { background: #f9fafb; }
+  .portal-header { background: #1e293b; color: #fff; padding: 0.9rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+  .portal-header h1 { font-size: 1.1rem; font-weight: 600; }
+  .portal-body { padding: 2rem; max-width: 680px; margin: 0 auto; width: 100%; }
+  .level-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+  .level-card { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
+  .level-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+  .level-card.selected { border-color: var(--primary); background: #eff6ff; }
+  .level-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .level-card h3 { font-size: 0.9rem; font-weight: 600; }
+  .level-card p { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .reg-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; }
+  .reg-card h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .reg-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .info-rules { background: #fefce8; border: 1px solid #fde047; border-radius: 8px; padding: 0.9rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; }
+  .info-rules ul { padding-left: 1rem; line-height: 2; }
+
+  /* ===== EXAM SCREEN ===== */
+  #exam-screen { background: #0f172a; color: #f8fafc; }
+  #exam-screen.unlocked { background: #f9fafb; color: var(--text); }
+  .exam-topbar { background: #1e293b; color: #f8fafc; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+  .exam-topbar.unlocked { background: #1e293b; }
+  .exam-timer { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #facc15; }
+  .exam-timer.danger { color: #f87171; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .exam-meta { font-size: 0.8rem; color: #94a3b8; }
+  .exam-body { padding: 1.5rem; max-width: 800px; margin: 0 auto; }
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1rem; }
+  .q-num { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .q-text { font-size: 1rem; font-weight: 500; line-height: 1.6; margin-bottom: 1.25rem; }
+  .options { display: flex; flex-direction: column; gap: 0.5rem; }
+  .option-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 1rem; border: 1.5px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; text-align: left; font-size: 0.9rem; transition: border-color 0.15s, background 0.15s; }
+  .option-btn:hover { border-color: var(--primary); background: #eff6ff; }
+  .option-btn.selected { border-color: var(--primary); background: #dbeafe; }
+  .option-btn.correct { border-color: #059669; background: #d1fae5; }
+  .option-btn.wrong { border-color: #dc2626; background: #fee2e2; }
+  .option-label { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.78rem; flex-shrink: 0; }
+  .selected .option-label { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .correct .option-label { background: #059669; color: #fff; border-color: #059669; }
+  .wrong .option-label { background: #dc2626; color: #fff; border-color: #dc2626; }
+  .exam-nav { display: flex; justify-content: space-between; padding: 1.5rem; position: sticky; bottom: 0; background: rgba(249,250,251,0.95); border-top: 1px solid var(--border); }
+  .q-progress { display: flex; gap: 4px; flex-wrap: wrap; padding: 0.75rem 1.5rem; }
+  .q-dot { width: 28px; height: 28px; border-radius: 5px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; color: #6b7280; cursor: pointer; }
+  .q-dot.answered { background: var(--primary); color: #fff; }
+  .q-dot.current { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+  /* ===== LOCK SCREEN ===== */
+  #lock-screen { background: #0f172a; color: #f8fafc; display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; position: fixed; inset: 0; z-index: 9999; }
+  #lock-screen.show { display: flex; }
+  .lock-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .lock-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .lock-sub { font-size: 0.9rem; color: #94a3b8; max-width: 360px; text-align: center; }
+
+  /* ===== CAMERA BOX ===== */
+  #cam-box { position: fixed; top: 12px; right: 12px; z-index: 200; border: 2px solid #22c55e; border-radius: 8px; overflow: hidden; }
+  #cam-box video { width: 160px; height: 112px; display: block; object-fit: cover; }
+  .cam-label { background: #15803d; color: #fff; font-size: 0.65rem; padding: 2px 6px; text-align: center; font-weight: 600; }
+  .cam-alert { background: #ef4444; }
+
+  /* ===== RESULTS ===== */
+  #result-screen { align-items: center; justify-content: center; background: #f9fafb; }
+  .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 90%; text-align: center; }
+  .score-ring { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 8px solid; }
+  .score-ring.pass { border-color: #059669; }
+  .score-ring.fail { border-color: #dc2626; }
+  .score-num { font-size: 2.5rem; font-weight: 800; }
+  .score-lbl { font-size: 0.8rem; color: var(--muted); }
+  .breakdown { margin: 1.5rem 0; text-align: left; font-size: 0.875rem; }
+  .breakdown-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+
+  /* ===== DISQUALIFIED ===== */
+  #disq-screen { background: #1c0606; color: #fca5a5; display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; position: fixed; inset: 0; z-index: 10000; }
+  #disq-screen.show { display: flex; }
+  .disq-icon { font-size: 5rem; margin-bottom: 1rem; }
+  .disq-title { font-size: 1.8rem; font-weight: 800; color: #ef4444; }
+  .disq-msg { font-size: 0.9rem; color: #fca5a5; max-width: 420px; text-align: center; margin-top: 0.75rem; }
+
+  /* ===== LOADER ===== */
+  .loader { text-align: center; padding: 3rem; color: var(--muted); }
+  .spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 0.75rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== CAMERA OVERLAY ANALYSIS ===== */
+  .cam-status-bar { position: fixed; bottom: 70px; right: 12px; background: #1e293b; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 0.72rem; z-index: 300; max-width: 170px; }
+
+  @media (max-width: 600px) {
+    .level-cards { grid-template-columns: 1fr; }
+    .admin-grid { grid-template-columns: 1fr; }
+    #cam-box video { width: 100px; height: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOCK SCREEN ===== -->
+<div id="lock-screen">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title">Exam Tab is Active</div>
+  <div class="lock-sub">Please return to the exam tab. Leaving this tab during the exam is recorded and may result in disqualification.</div>
+</div>
+
+<!-- ===== DISQUALIFIED SCREEN ===== -->
+<div id="disq-screen">
+  <div class="disq-icon">🚫</div>
+  <div class="disq-title">DISQUALIFIED</div>
+  <div class="disq-msg" id="disq-reason">You have been disqualified from this examination by the administrator.</div>
+</div>
+
+<!-- ===== CAMERA BOX ===== -->
+<div id="cam-box" style="display:none;">
+  <video id="cam-video" autoplay muted playsinline></video>
+  <div class="cam-label" id="cam-label">🟢 MONITORED</div>
+</div>
+<div class="cam-status-bar" id="cam-status" style="display:none;">Analyzing...</div>
+
+<!-- ===== LANDING SCREEN ===== -->
+<div class="screen active" id="landing-screen">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;">
+    <div style="max-width:420px;width:100%;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:1rem;">📊</div>
+      <h1 style="font-size:1.8rem;font-weight:800;margin-bottom:0.5rem;">Excel Mastery Exam</h1>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:2rem;">AI-powered, anti-cheat Excel certification system</p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:0.75rem;" onclick="showAdminLogin()">⚙️ Admin Login</button>
+        <button class="btn btn-outline" style="width:100%;justify-content:center;padding:0.75rem;" onclick="showStudentPortal()">📝 Take Exam (Student)</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:1.5rem;">Admin: first-time setup creates credentials. Students: your link will be shared by admin.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN LOGIN ===== -->
+<div id="admin-login" style="display:none;">
+  <div class="login-card">
+    <div style="font-size:2rem;margin-bottom:0.5rem;">⚙️</div>
+    <h2>Admin Login</h2>
+    <p>Enter your admin credentials to access the control panel.</p>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="admin-user" placeholder="admin" value="admin">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="admin-pass" placeholder="••••••••" value="admin123">
+    </div>
+    <div id="admin-login-err" style="color:var(--danger);font-size:0.82rem;margin-bottom:0.75rem;display:none;">Invalid credentials.</div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doAdminLogin()">Login to Admin Panel</button>
+    <button class="btn btn-outline" style="width:100%;justify-content:center;margin-top:0.5rem;" onclick="showLanding()">← Back</button>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div class="screen" id="admin-screen">
+  <div class="admin-header">
+    <h1>📊 Excel Exam — Admin Control Panel</h1>
+    <div style="display:flex;gap:0.75rem;align-items:center;">
+      <span style="font-size:0.8rem;opacity:0.8;" id="admin-date"></span>
+      <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.3);font-size:0.8rem;" onclick="showLanding()">Logout</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-grid">
+      <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">Total Students</div></div>
+      <div class="stat-card"><div class="num" id="s-active">0</div><div class="lbl">Currently Active</div></div>
+      <div class="stat-card"><div class="num" id="s-disq">0</div><div class="lbl">Disqualified</div></div>
+    </div>
+
+    <div class="admin-section">
+      <h2>📎 Student Exam Link</h2>
+      <p id="exam-link-help" style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Share this link with students. Anyone who opens this link can take the exam.</p>
+      <div class="admin-link-box">
+        <input type="text" id="exam-link-input" readonly>
+        <button class="btn btn-primary" onclick="copyLink()">Copy</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>🚨 Live Alerts</h2>
+      <div id="alerts-container">
+        <p style="font-size:0.82rem;color:var(--muted);">No alerts yet.</p>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>👥 Candidate Monitor</h2>
+      <div style="overflow-x:auto;">
+        <table class="candidate-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Level</th><th>Status</th><th>Tab Switches</th><th>Cam Alerts</th><th>Score</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="candidates-tbody">
+            <tr><td colspan="7" style="color:var(--muted);font-size:0.82rem;padding:1rem;">No candidates yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STUDENT PORTAL ===== -->
+<div class="screen" id="student-screen">
+  <div class="portal-header">
+    <h1>📊 Excel Mastery Exam — Student Portal</h1>
+    <span id="student-portal-date" style="font-size:0.8rem;opacity:0.7;"></span>
+  </div>
+  <div class="portal-body">
+    <div class="reg-card">
+      <h2>Welcome! Register to Begin</h2>
+      <p>Please fill in your details and choose your exam level below.</p>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="s-name" placeholder="Your full name">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="s-email" placeholder="your@email.com">
+      </div>
+
+      <div class="form-group">
+        <label>Select Exam Level</label>
+        <div class="level-cards">
+          <div class="level-card" onclick="selectLevel(1,this)">
+            <div class="icon">🌱</div>
+            <h3>Beginner</h3>
+            <p>Basic Excel, navigation, formatting</p>
+          </div>
+          <div class="level-card" onclick="selectLevel(2,this)">
+            <div class="icon">⚡</div>
+            <h3>Moderate</h3>
+            <p>Charts, sorting, filters, data tools</p>
+          </div>
+          <div class="level-card" onclick="selectLevel(3,this)">
+            <div class="icon">🧮</div>
+            <h3>Formula Expert</h3>
+            <p>Advanced formulas, nested functions</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-rules">
+        <strong style="font-size:0.85rem;">📋 Exam Rules & Anti-Cheat Policy</strong>
+        <ul style="margin-top:0.5rem;">
+          <li>Camera monitoring is active throughout the exam</li>
+          <li>Do not switch tabs or minimize the browser window</li>
+          <li>Each tab switch is logged and reported to the admin</li>
+          <li>3 tab switches = automatic disqualification</li>
+          <li>Looking away from screen repeatedly may trigger alerts</li>
+          <li>The exam screen locks if you leave the tab</li>
+          <li>You have 30 minutes to complete 20 questions</li>
+          <li>Passing score: 60%</li>
+        </ul>
+      </div>
+
+      <div id="reg-err" style="color:var(--danger);font-size:0.82rem;margin-bottom:0.75rem;display:none;"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:0.75rem;" onclick="startExamFlow()">
+        🎓 Start Exam
+      </button>
+      <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.75rem;">By clicking Start, you agree to the exam rules and consent to camera monitoring.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EXAM SCREEN ===== -->
+<div class="screen" id="exam-screen">
+  <div class="exam-topbar" id="exam-topbar">
+    <div>
+      <div style="font-weight:600;font-size:0.9rem;" id="exam-candidate-name">Student Name</div>
+      <div class="exam-meta" id="exam-level-label">Level: Beginner</div>
+    </div>
+    <div class="exam-timer" id="exam-timer">30:00</div>
+    <div>
+      <span class="exam-meta" id="exam-q-counter">Q 1 / 20</span>
+    </div>
+  </div>
+  <div class="q-progress" id="q-progress"></div>
+  <div class="exam-body" id="exam-body">
+    <div class="loader"><div class="spinner"></div><p>Loading questions...</p></div>
+  </div>
+  <div class="exam-nav">
+    <button class="btn btn-outline" id="prev-btn" onclick="prevQ()">← Previous</button>
+    <button class="btn btn-primary" id="next-btn" onclick="nextQ()">Next →</button>
+    <button class="btn btn-success" id="submit-btn" style="display:none;" onclick="confirmSubmit()">✔ Submit Exam</button>
+  </div>
+</div>
+
+<!-- ===== RESULT SCREEN ===== -->
+<div class="screen" id="result-screen">
+  <div class="result-card">
+    <div class="score-ring" id="score-ring">
+      <div class="score-num" id="score-num">0%</div>
+      <div class="score-lbl">Your Score</div>
+    </div>
+    <h2 id="result-title" style="font-size:1.4rem;font-weight:700;"></h2>
+    <p id="result-sub" style="color:var(--muted);font-size:0.9rem;margin-top:0.25rem;"></p>
+    <div class="breakdown" id="result-breakdown"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1rem;" onclick="showLanding()">🏠 Return to Home</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  GLOBAL STATE
+// ============================================================
+let appState = {
+  adminLoggedIn: false,
+  student: { name:'', email:'', level:0, id:'' },
+  exam: { questions:[], answers:{}, currentQ:0, timer:null, timeLeft:1800, submitted:false },
+  security: { tabSwitches:0, camAlerts:0, disqualified:false },
+  candidates: {},
+  alerts: []
+};
+
+const ADMIN_CREDS = { user:'admin', pass:'admin123' };
+const EXAM_DURATION = 1800; // 30 min
+const MAX_TAB_SWITCHES = 3;
+
+// ============================================================
+//  QUESTION BANK
+// ============================================================
+const QB = {
+  1: [ // BEGINNER
+    { q:"What is the keyboard shortcut to select ALL cells in an Excel worksheet?", opts:["Ctrl+A","Ctrl+S","Ctrl+Z","Ctrl+C"], ans:0 },
+    { q:"Which file extension is used by Excel 2007 and later versions?", opts:[".xls",".xlsx",".csv",".xml"], ans:1 },
+    { q:"How do you freeze the top row in Excel?", opts:["View → Freeze Panes → Freeze Top Row","Format → Freeze → Top Row","Data → Freeze Row","Insert → Lock → Row 1"], ans:0 },
+    { q:"What is the intersection of a row and column called in Excel?", opts:["Range","Sheet","Cell","Workbook"], ans:2 },
+    { q:"To merge cells A1 and B1 in Excel, you go to:", opts:["Home → Merge & Center","Insert → Merge Cells","Format → Merge","Data → Combine Cells"], ans:0 },
+    { q:"Which Excel feature allows you to quickly fill a series of numbers or dates?", opts:["AutoSum","AutoFill","AutoFilter","AutoFormat"], ans:1 },
+    { q:"What does pressing Ctrl+Z do in Excel?", opts:["Redo the last action","Undo the last action","Zoom in","Open Find dialog"], ans:1 },
+    { q:"How do you apply bold formatting to selected cells?", opts:["Ctrl+B","Ctrl+T","Ctrl+U","Ctrl+I"], ans:0 },
+    { q:"What is the maximum number of rows in an Excel 2019 worksheet?", opts:["65,536","1,048,576","10,000,000","256"], ans:1 },
+    { q:"To insert a new row in Excel, right-click on the row number and select:", opts:["Add Row","New Row","Insert","Append Row"], ans:2 },
+    { q:"Which tab in the Ribbon contains the 'Sort & Filter' option?", opts:["Insert","Data","View","Review"], ans:1 },
+    { q:"What does the 'Wrap Text' option do?", opts:["Rotates cell text","Makes text fit within a cell by adding line breaks","Hides overflow text","Merges cells"], ans:1 },
+    { q:"What is the shortcut to save a workbook?", opts:["Ctrl+P","Ctrl+W","Ctrl+S","Ctrl+X"], ans:2 },
+    { q:"How do you make a cell reference ABSOLUTE in a formula?", opts:["Using # sign","Using $ sign","Using @ sign","Using % sign"], ans:1 },
+    { q:"Which of the following is a valid cell reference in Excel?", opts:["C#3","1A","AB32","123Z"], ans:2 },
+    { q:"The 'Name Box' in Excel displays:", opts:["The workbook name","The active cell address","The last formula used","The current sheet name"], ans:1 },
+    { q:"What color is used by default for hyperlinks in Excel?", opts:["Red","Green","Blue","Purple"], ans:2 },
+    { q:"To delete the content of selected cells without deleting the cells themselves, press:", opts:["Backspace","Delete","Ctrl+Delete","Alt+Delete"], ans:1 },
+    { q:"What does Ctrl+End do in Excel?", opts:["Goes to cell A1","Goes to the last used cell in the worksheet","Ends the application","Closes the workbook"], ans:1 },
+    { q:"Which of these is NOT a valid way to enter data into a cell?", opts:["Type and press Enter","Type and press Tab","Type and press Ctrl+Enter","Type and press Ctrl+Shift+Enter"], ans:3 }
+  ],
+  2: [ // MODERATE
+    { q:"What does the VLOOKUP function do?", opts:["Performs vertical mathematical calculations","Looks up a value in the leftmost column of a table and returns a value from a specified column","Validates data in cells","Filters visible rows"], ans:1 },
+    { q:"Which chart type is best for showing proportions of a whole?", opts:["Bar chart","Line chart","Pie chart","Scatter chart"], ans:2 },
+    { q:"What is a PivotTable used for?", opts:["Creating pivot animations","Summarizing and analyzing large datasets","Drawing shapes","Converting data to PDF"], ans:1 },
+    { q:"The 'Remove Duplicates' feature is found under which tab?", opts:["Home","Insert","Data","Review"], ans:2 },
+    { q:"What does 'Conditional Formatting' allow you to do?", opts:["Format cells based on their values","Format cells permanently","Convert formulas to values","Protect cells from editing"], ans:0 },
+    { q:"Which function returns the number of cells that contain numbers?", opts:["COUNTA","COUNT","COUNTIF","COUNTBLANK"], ans:1 },
+    { q:"How do you create a named range in Excel?", opts:["Right-click → Name Range","Use the Name Box and type a name","Insert → Named Range","Data → Create Range Name"], ans:1 },
+    { q:"What is the purpose of Data Validation in Excel?", opts:["To encrypt data","To restrict the type of data entered into cells","To validate Excel license","To check formulas for errors"], ans:1 },
+    { q:"Which Excel feature allows you to summarize data from multiple worksheets?", opts:["Consolidate","Merge Sheets","MultiSum","Group Sheets"], ans:0 },
+    { q:"What does the 'Text to Columns' feature do?", opts:["Converts text to column chart","Splits cell content into multiple columns","Merges text from multiple columns","Changes column formatting to text"], ans:1 },
+    { q:"In a PivotTable, 'Slicers' are used to:", opts:["Cut data into rows","Provide visual filtering buttons","Slice cells for deletion","Format pivot values"], ans:1 },
+    { q:"What is the purpose of the IFERROR function?", opts:["Checks if a value is an error and returns an alternative","Returns an error value","Lists all errors in a sheet","Corrects formula errors automatically"], ans:0 },
+    { q:"Which shortcut inserts the current date in a cell?", opts:["Ctrl+;","Ctrl+D","Ctrl+Shift+;","Alt+D"], ans:0 },
+    { q:"What does the 'Flash Fill' feature in Excel do?", opts:["Fills cells with a flashing highlight","Automatically fills data based on a recognized pattern","Applies gradient fills","Copies conditional formatting"], ans:1 },
+    { q:"HLOOKUP searches for a value in the:", opts:["First column","First row","Last column","Last row"], ans:1 },
+    { q:"What is 'Goal Seek' in Excel used for?", opts:["Finding the goal of a project","Finding the input needed to achieve a desired result","Setting project deadlines","Seeking new sheet templates"], ans:1 },
+    { q:"Which view shows how the spreadsheet will look when printed?", opts:["Normal View","Page Layout View","Print Preview","Web Layout View"], ans:2 },
+    { q:"What does the 'Protect Sheet' feature do?", opts:["Saves the sheet to a safe location","Prevents unauthorized changes to sheet content","Encrypts the file","Locks the sheet with a watermark"], ans:1 },
+    { q:"The CONCATENATE function (or & operator) is used to:", opts:["Add numbers","Join text strings together","Find text in cells","Count text occurrences"], ans:1 },
+    { q:"What is a 'Sparkline' in Excel?", opts:["A type of chart object","A small chart within a single cell","A conditional formatting rule","A data validation indicator"], ans:1 }
+  ],
+  3: [ // FORMULA EXPERT
+    { q:"What does the formula =SUMPRODUCT(A1:A5,B1:B5) calculate?", opts:["Sum of A1:A5 and B1:B5 separately","Product of all values in A1:A5 and B1:B5","Sum of products of corresponding elements in both arrays","Maximum product in both ranges"], ans:2 },
+    { q:"Which formula returns the nth largest value in a range?", opts:["=MAX(range,n)","=LARGE(range,n)","=RANK(n,range)","=TOP(range,n)"], ans:1 },
+    { q:"What does =OFFSET(A1,2,3) return?", opts:["The value 2 rows down and 3 columns right of A1","The value 2 rows up and 3 columns left of A1","The range starting at row 2, column 3","An error"], ans:0 },
+    { q:"The formula =INDEX(A1:C5,3,2) returns:", opts:["The value in row 2, column 3","The value in row 3, column 2","The range from row 3 to column 2","An array of values"], ans:1 },
+    { q:"How do you use MATCH to find the position of 'Apple' in A1:A10?", opts:["=MATCH(Apple,A1:A10,0)","=MATCH(\"Apple\",A1:A10,0)","=POSITION(\"Apple\",A1:A10)","=FIND(\"Apple\",A1:A10)"], ans:1 },
+    { q:"What does the array formula {=SUM(IF(A1:A10>5,B1:B10,0))} do?", opts:["Sums all values in B where A > 5","Counts how many A values > 5","Returns TRUE if any A > 5","Sums all values in A > 5"], ans:0 },
+    { q:"The formula =TEXT(A1,\"DD-MMM-YYYY\") does what?", opts:["Converts A1 to a date format","Formats the date value in A1 as text in that format","Adds text to a number","Returns the month of date in A1"], ans:1 },
+    { q:"What is the result of =MOD(17,5)?", opts:["3","2","3.4","4"], ans:1 },
+    { q:"Which formula combines INDEX and MATCH to look up a value to the LEFT of the lookup column?", opts:["=VLOOKUP(value,range,-1,0)","=INDEX(result_range,MATCH(value,lookup_range,0))","=LEFTLOOKUP(value,range)","=HLOOKUP(value,range,0)"], ans:1 },
+    { q:"What does the INDIRECT function do?", opts:["Creates an indirect cell reference from a text string","Returns the indirect value of a number","Finds text indirectly in a range","Performs an approximate match"], ans:0 },
+    { q:"The formula =SUMIFS(C1:C10,A1:A10,\"East\",B1:B10,\">100\") sums values in C where:", opts:["A = East OR B > 100","A = East AND B > 100","A contains East and B is exactly 100","Only where A = East"], ans:1 },
+    { q:"What does =TRANSPOSE(A1:C3) do when entered as an array formula?", opts:["Moves the range to a new location","Swaps rows and columns of the range","Sums the transposed range","Copies the range diagonally"], ans:1 },
+    { q:"The formula =CHOOSE(2,\"Red\",\"Blue\",\"Green\") returns:", opts:["Red","Blue","Green","2"], ans:1 },
+    { q:"What is a Volatile function in Excel?", opts:["A function that causes errors","A function that recalculates every time the worksheet changes, regardless of inputs","A function with variable output","A function that requires array entry"], ans:1 },
+    { q:"The function =ROUND(3.14159,2) returns:", opts:["3.1","3.14","3.15","3.141"], ans:1 },
+    { q:"=COUNTIFS(A1:A10,\">=10\",A1:A10,\"<=20\") counts:", opts:["Values equal to 10 or 20","Values > 10 and < 20","Values between 10 and 20 inclusive","Values outside 10 and 20"], ans:2 },
+    { q:"Which function returns the position of the first occurrence of a substring?", opts:["SEARCH","FIND","Both FIND and SEARCH","LOCATE"], ans:2 },
+    { q:"What does the EDATE function do?", opts:["Returns the exact date","Returns a date a specified number of months before or after a given date","Extracts the day, month and year","Converts text to date"], ans:1 },
+    { q:"The formula =NETWORKDAYS(A1,B1) calculates:", opts:["Total days between two dates","Working days between two dates excluding weekends","Days remaining in the network","Network activity days"], ans:1 },
+    { q:"=ISNUMBER(\"123\") returns:", opts:["TRUE","FALSE","123","#VALUE!"], ans:1 }
+  ]
+};
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  // hide the standalone login card too
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('landing-screen').classList.remove('active');
+}
+
+function showLanding() {
+  clearExamTimers();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('landing-screen').classList.add('active');
+  document.getElementById('cam-box').style.display = 'none';
+  document.getElementById('cam-status').style.display = 'none';
+  stopCamera();
+}
+
+function showAdminLogin() {
+  document.getElementById('landing-screen').classList.remove('active');
+  document.getElementById('admin-login').style.display = 'flex';
+}
+
+function showStudentPortal() {
+  showScreen('student-screen');
+  document.getElementById('student-portal-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// ============================================================
+//  ADMIN
+// ============================================================
+function doAdminLogin() {
+  const u = document.getElementById('admin-user').value;
+  const p = document.getElementById('admin-pass').value;
+  if (u === ADMIN_CREDS.user && p === ADMIN_CREDS.pass) {
+    appState.adminLoggedIn = true;
+    document.getElementById('admin-login').style.display = 'none';
+    showScreen('admin-screen');
+    document.getElementById('admin-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('exam-link-input').value = getExamShareLink();
+    document.getElementById('exam-link-help').textContent = isLocalFileMode()
+      ? 'This exam is currently opened from your computer. Upload this HTML file to a hosting service first, then share the hosted URL with students.'
+      : 'Share this link with students. Anyone who opens this link can take the exam.';
+    refreshAdminPanel();
+    setInterval(refreshAdminPanel, 3000);
+  } else {
+    document.getElementById('admin-login-err').style.display = 'block';
+  }
+}
+
+function isLocalFileMode() {
+  return window.location.protocol === 'file:';
+}
+
+function getExamShareLink() {
+  if (isLocalFileMode()) {
+    return 'This file is running locally. Upload it to a hosting service first, then share that hosted URL.';
+  }
+  return window.location.href.split('?')[0] + '?role=student';
+}
+
+function copyLink() {
+  const inp = document.getElementById('exam-link-input');
+  if (isLocalFileMode()) {
+    alert('This exam is opened as a local file, so students cannot use this path. Upload the HTML file to a hosting service like Netlify or GitHub Pages, then share the hosted URL.');
+    return;
+  }
+  inp.select();
+  document.execCommand('copy');
+  alert('Exam link copied! Share this with students.');
+}
+
+function refreshAdminPanel() {
+  const cands = Object.values(appState.candidates);
+  document.getElementById('s-total').textContent = cands.length;
+  document.getElementById('s-active').textContent = cands.filter(c=>c.status==='active').length;
+  document.getElementById('s-disq').textContent = cands.filter(c=>c.status==='disqualified').length;
+
+  const tbody = document.getElementById('candidates-tbody');
+  if (!cands.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);font-size:0.82rem;padding:1rem;">No candidates yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = cands.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td>${['','🌱 Beginner','⚡ Moderate','🧮 Formula'][c.level]||''}</td>
+      <td><span class="badge badge-${c.status==='active'?'active':c.status==='disqualified'?'disq':c.status==='completed'?'done':'warn'}">${c.status.toUpperCase()}</span></td>
+      <td>${c.tabSwitches}</td>
+      <td>${c.camAlerts}</td>
+      <td>${c.score!==null?c.score+'%':'—'}</td>
+      <td><button class="disq-btn" ${c.status==='disqualified'||c.status==='completed'?'disabled':''} onclick="adminDisqualify('${c.id}')">Disqualify</button></td>
+    </tr>
+  `).join('');
+
+  const alertsDiv = document.getElementById('alerts-container');
+  if (!appState.alerts.length) {
+    alertsDiv.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);">No alerts yet.</p>';
+    return;
+  }
+  alertsDiv.innerHTML = appState.alerts.slice(-10).reverse().map(a => `
+    <div class="alert-box">
+      <span class="alert-msg">⚠️ ${a.msg}</span>
+      <span class="alert-time">${a.time}</span>
+    </div>
+  `).join('');
+}
+
+function adminDisqualify(id) {
+  if (!confirm('Are you sure you want to disqualify this candidate?')) return;
+  if (appState.candidates[id]) {
+    appState.candidates[id].status = 'disqualified';
+    addAlert(`${appState.candidates[id].name} was manually disqualified by admin.`);
+  }
+  if (appState.student.id === id) {
+    triggerDisqualified('You have been disqualified by the administrator.');
+  }
+  refreshAdminPanel();
+}
+
+function addAlert(msg) {
+  appState.alerts.push({ msg, time: new Date().toLocaleTimeString() });
+  refreshAdminPanel();
+}
+
+// ============================================================
+//  STUDENT REGISTRATION
+// ============================================================
+let selectedLevel = 0;
+function selectLevel(l, el) {
+  selectedLevel = l;
+  document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function startExamFlow() {
+  const name = document.getElementById('s-name').value.trim();
+  const email = document.getElementById('s-email').value.trim();
+  const errEl = document.getElementById('reg-err');
+  if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display='block'; return; }
+  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display='block'; return; }
+  if (!selectedLevel) { errEl.textContent = 'Please select an exam level.'; errEl.style.display='block'; return; }
+  errEl.style.display = 'none';
+
+  appState.student = { name, email, level: selectedLevel, id: 'stu_' + Date.now() };
+  appState.security = { tabSwitches:0, camAlerts:0, disqualified:false };
+
+  appState.candidates[appState.student.id] = {
+    id: appState.student.id, name, email, level: selectedLevel,
+    status: 'active', tabSwitches:0, camAlerts:0, score: null
+  };
+
+  await requestCamera();
+  startExam();
+}
+
+// ============================================================
+//  CAMERA
+// ============================================================
+let camStream = null;
+let faceCheckInterval = null;
+
+async function requestCamera() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const v = document.getElementById('cam-video');
+    v.srcObject = camStream;
+    document.getElementById('cam-box').style.display = 'block';
+    document.getElementById('cam-status').style.display = 'block';
+    startFaceMonitor();
+  } catch(e) {
+    addAlert(`Camera access denied for ${appState.student.name}. Exam started without camera.`);
+  }
+}
+
+function stopCamera() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  clearInterval(faceCheckInterval);
+}
+
+// Lightweight face-presence simulation using motion detection
+let lastFrame = null;
+let noFaceCount = 0;
+
+function startFaceMonitor() {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const video = document.getElementById('cam-video');
+  canvas.width = 80; canvas.height = 60;
+
+  faceCheckInterval = setInterval(() => {
+    if (!camStream || appState.exam.submitted) return;
+    try {
+      ctx.drawImage(video, 0, 0, 80, 60);
+      const frame = ctx.getImageData(0, 0, 80, 60).data;
+      if (lastFrame) {
+        let diff = 0;
+        for (let i = 0; i < frame.length; i += 4) {
+          diff += Math.abs(frame[i] - lastFrame[i]);
+        }
+        const avgDiff = diff / (frame.length / 4);
+        // Check brightness as proxy for face presence
+        let brightness = 0;
+        for (let i = 0; i < frame.length; i += 4) brightness += frame[i];
+        brightness /= (frame.length / 4);
+        const statusEl = document.getElementById('cam-status');
+        const labelEl = document.getElementById('cam-label');
+
+        if (brightness < 20) {
+          // Very dark = camera covered or no face
+          noFaceCount++;
+          statusEl.textContent = '⚠️ Face not detected';
+          labelEl.textContent = '🔴 ALERT';
+          labelEl.className = 'cam-label cam-alert';
+          if (noFaceCount >= 3) {
+            handleCamAlert('Face not visible — possible cheating attempt detected');
+            noFaceCount = 0;
+          }
+        } else if (avgDiff > 25) {
+          // High movement
+          noFaceCount++;
+          statusEl.textContent = '⚠️ Excessive movement';
+          labelEl.textContent = '🟡 MOTION';
+          labelEl.className = 'cam-label';
+          labelEl.style.background = '#d97706';
+          if (noFaceCount >= 4) {
+            handleCamAlert('Excessive movement detected — candidate may be looking away');
+            noFaceCount = 0;
+          }
+        } else {
+          noFaceCount = 0;
+          statusEl.textContent = '✅ Face detected';
+          labelEl.textContent = '🟢 MONITORED';
+          labelEl.className = 'cam-label';
+          labelEl.style.background = '#15803d';
+        }
+      }
+      lastFrame = new Uint8Array(frame);
+    } catch(e){}
+  }, 2000);
+}
+
+function handleCamAlert(msg) {
+  appState.security.camAlerts++;
+  if (appState.candidates[appState.student.id]) {
+    appState.candidates[appState.student.id].camAlerts = appState.security.camAlerts;
+  }
+  addAlert(`📷 CAM ALERT [${appState.student.name}]: ${msg}`);
+  if (appState.security.camAlerts >= 5) {
+    autoDisqualify('Too many camera violations detected.');
+  }
+}
+
+// ============================================================
+//  SECURITY — TAB SWITCH / VISIBILITY
+// ============================================================
+function initSecurityListeners() {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('blur', handleWindowBlur);
+  document.addEventListener('contextmenu', e => { if (!appState.adminLoggedIn) e.preventDefault(); });
+  document.addEventListener('keydown', e => {
+    if (!appState.exam.submitted && appState.exam.questions.length) {
+      // Block F12, Ctrl+Shift+I, Ctrl+U, etc.
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+          (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+        addAlert(`🛑 DevTools attempt by ${appState.student.name}`);
+      }
+    }
+  });
+}
+
+function handleVisibilityChange() {
+  if (document.hidden && appState.exam.questions.length && !appState.exam.submitted) {
+    onTabSwitch();
+    document.getElementById('lock-screen').classList.add('show');
+  } else {
+    document.getElementById('lock-screen').classList.remove('show');
+  }
+}
+
+function handleWindowBlur() {
+  if (appState.exam.questions.length && !appState.exam.submitted && !document.hidden) {
+    // Window blur (different window, not just tab switch)
+  }
+}
+
+function onTabSwitch() {
+  if (appState.security.disqualified) return;
+  appState.security.tabSwitches++;
+  if (appState.candidates[appState.student.id]) {
+    appState.candidates[appState.student.id].tabSwitches = appState.security.tabSwitches;
+  }
+  const remaining = MAX_TAB_SWITCHES - appState.security.tabSwitches;
+  addAlert(`🔀 TAB SWITCH [${appState.student.name}]: Switch #${appState.security.tabSwitches}. ${remaining > 0 ? remaining + ' remaining before disqualification.' : 'DISQUALIFIED!'}`);
+  if (appState.security.tabSwitches >= MAX_TAB_SWITCHES) {
+    autoDisqualify(`Exceeded maximum tab switches (${MAX_TAB_SWITCHES}).`);
+  }
+}
+
+function autoDisqualify(reason) {
+  appState.security.disqualified = true;
+  clearExamTimers();
+  if (appState.candidates[appState.student.id]) {
+    appState.candidates[appState.student.id].status = 'disqualified';
+    addAlert(`🚫 AUTO-DISQUALIFIED [${appState.student.name}]: ${reason}`);
+  }
+  triggerDisqualified(reason);
+}
+
+function triggerDisqualified(reason) {
+  document.getElementById('disq-reason').textContent = reason || 'You have been disqualified from this examination.';
+  document.getElementById('disq-screen').classList.add('show');
+  document.getElementById('lock-screen').classList.remove('show');
+  clearExamTimers();
+  stopCamera();
+}
+
+// ============================================================
+//  EXAM ENGINE
+// ============================================================
+function startExam() {
+  const level = appState.student.level;
+  let pool = [...QB[level]];
+  // Shuffle
+  pool = pool.sort(() => Math.random() - 0.5);
+  appState.exam.questions = pool.slice(0, 20);
+  appState.exam.answers = {};
+  appState.exam.currentQ = 0;
+  appState.exam.submitted = false;
+  appState.exam.timeLeft = EXAM_DURATION;
+
+  showScreen('exam-screen');
+  document.getElementById('exam-candidate-name').textContent = appState.student.name;
+  document.getElementById('exam-level-label').textContent = 'Level: ' + ['','Beginner','Moderate','Formula Expert'][level];
+
+  renderQuestion();
+  startTimer();
+  buildProgressDots();
+  initSecurityListeners();
+}
+
+function renderQuestion() {
+  const idx = appState.exam.currentQ;
+  const q = appState.exam.questions[idx];
+  const total = appState.exam.questions.length;
+  document.getElementById('exam-q-counter').textContent = `Q ${idx+1} / ${total}`;
+
+  const body = document.getElementById('exam-body');
+  const answered = appState.exam.answers[idx];
+  const labels = ['A','B','C','D'];
+
+  body.innerHTML = `
+    <div class="question-card">
+      <div class="q-num">Question ${idx+1} of ${total}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">
+        ${q.opts.map((opt, i) => `
+          <button class="option-btn ${answered===i?'selected':''}" onclick="selectAnswer(${i})">
+            <span class="option-label">${labels[i]}</span>
+            <span>${opt}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('prev-btn').style.display = idx === 0 ? 'none' : 'inline-flex';
+  document.getElementById('next-btn').style.display = idx === total-1 ? 'none' : 'inline-flex';
+  document.getElementById('submit-btn').style.display = idx === total-1 ? 'inline-flex' : 'none';
+  updateProgressDots();
+}
+
+function selectAnswer(i) {
+  appState.exam.answers[appState.exam.currentQ] = i;
+  renderQuestion();
+  updateProgressDots();
+}
+
+function nextQ() {
+  if (appState.exam.currentQ < appState.exam.questions.length - 1) {
+    appState.exam.currentQ++;
+    renderQuestion();
+  }
+}
+
+function prevQ() {
+  if (appState.exam.currentQ > 0) {
+    appState.exam.currentQ--;
+    renderQuestion();
+  }
+}
+
+function buildProgressDots() {
+  const prog = document.getElementById('q-progress');
+  prog.innerHTML = appState.exam.questions.map((_, i) => `
+    <div class="q-dot" id="qdot-${i}" onclick="jumpToQ(${i})">${i+1}</div>
+  `).join('');
+}
+
+function updateProgressDots() {
+  appState.exam.questions.forEach((_, i) => {
+    const dot = document.getElementById('qdot-'+i);
+    if (!dot) return;
+    dot.className = 'q-dot' + (appState.exam.answers[i]!==undefined?' answered':'') + (i===appState.exam.currentQ?' current':'');
+  });
+}
+
+function jumpToQ(i) {
+  appState.exam.currentQ = i;
+  renderQuestion();
+}
+
+function confirmSubmit() {
+  const answered = Object.keys(appState.exam.answers).length;
+  const total = appState.exam.questions.length;
+  if (answered < total) {
+    if (!confirm(`You have answered ${answered} of ${total} questions. ${total-answered} unanswered questions will be marked wrong. Submit anyway?`)) return;
+  } else {
+    if (!confirm('Are you sure you want to submit your exam?')) return;
+  }
+  submitExam();
+}
+
+function submitExam() {
+  appState.exam.submitted = true;
+  clearExamTimers();
+  stopCamera();
+  document.getElementById('cam-box').style.display = 'none';
+  document.getElementById('cam-status').style.display = 'none';
+
+  let correct = 0;
+  appState.exam.questions.forEach((q, i) => {
+    if (appState.exam.answers[i] === q.ans) correct++;
+  });
+  const pct = Math.round((correct / appState.exam.questions.length) * 100);
+  const pass = pct >= 60;
+
+  if (appState.candidates[appState.student.id]) {
+    appState.candidates[appState.student.id].status = 'completed';
+    appState.candidates[appState.student.id].score = pct;
+    addAlert(`✅ ${appState.student.name} submitted exam. Score: ${pct}% (${pass?'PASS':'FAIL'})`);
+  }
+
+  showResults(correct, pct, pass);
+}
+
+function showResults(correct, pct, pass) {
+  showScreen('result-screen');
+  const ring = document.getElementById('score-ring');
+  ring.className = 'score-ring ' + (pass?'pass':'fail');
+  document.getElementById('score-num').textContent = pct + '%';
+  document.getElementById('result-title').textContent = pass ? '🎉 Congratulations! You Passed!' : '❌ Better Luck Next Time';
+  document.getElementById('result-sub').textContent = `Level: ${['','Beginner','Moderate','Formula Expert'][appState.student.level]} | ${correct} / ${appState.exam.questions.length} correct`;
+
+  const tabW = appState.security.tabSwitches;
+  const camW = appState.security.camAlerts;
+  document.getElementById('result-breakdown').innerHTML = `
+    <div class="breakdown-row"><span>Correct Answers</span><span style="font-weight:600;color:var(--success)">${correct}</span></div>
+    <div class="breakdown-row"><span>Incorrect / Unanswered</span><span style="font-weight:600;color:var(--danger)">${appState.exam.questions.length - correct}</span></div>
+    <div class="breakdown-row"><span>Score</span><span style="font-weight:600">${pct}%</span></div>
+    <div class="breakdown-row"><span>Pass Threshold</span><span>60%</span></div>
+    <div class="breakdown-row"><span>Tab Switch Warnings</span><span style="color:${tabW>0?'var(--warning)':'var(--success)'}">${tabW}</span></div>
+    <div class="breakdown-row"><span>Camera Alerts</span><span style="color:${camW>0?'var(--warning)':'var(--success)'}">${camW}</span></div>
+  `;
+}
+
+// ============================================================
+//  TIMER
+// ============================================================
+function startTimer() {
+  appState.exam.timer = setInterval(() => {
+    appState.exam.timeLeft--;
+    const m = Math.floor(appState.exam.timeLeft / 60);
+    const s = appState.exam.timeLeft % 60;
+    const display = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const timerEl = document.getElementById('exam-timer');
+    if (timerEl) {
+      timerEl.textContent = display;
+      timerEl.className = 'exam-timer' + (appState.exam.timeLeft <= 300 ? ' danger' : '');
+    }
+    if (appState.exam.timeLeft <= 0) {
+      addAlert(`⏰ TIME EXPIRED for ${appState.student.name}. Auto-submitted.`);
+      submitExam();
+    }
+  }, 1000);
+}
+
+function clearExamTimers() {
+  if (appState.exam.timer) { clearInterval(appState.exam.timer); appState.exam.timer = null; }
+  if (faceCheckInterval) { clearInterval(faceCheckInterval); faceCheckInterval = null; }
+}
+
+// ============================================================
+//  AUTO-DETECT STUDENT LINK
+// ============================================================
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('role') === 'student') {
+    showStudentPortal();
+  }
+});
+
+// ============================================================
+//  INIT
+// ============================================================
+initSecurityListeners();
+</script>
+</body>
+</html>
